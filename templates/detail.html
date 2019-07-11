@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>detail</title>
+</head>
+<body>
+<h1>{{ detail.title }}</h1>
+<h4>{{ detail.content }}</h4>
+
+
+<br>
+<br>
+<a href="{% url 'blog_space:edit_page' detail.id %}">修改文章</a>
+</body>
+</html>

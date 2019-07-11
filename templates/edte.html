@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>edit page</title>
+    <style>
+        .textarea{
+            height: 100px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<form action="{% url 'blog_space:edit_action' %}" method="post" id="usrform">
+    {% csrf_token %}
+    {% if detail %}
+        <input type="hidden" name="page_id" value="{{ detail.id }}">
+        <label for="title">文章标题</label>
+        <input type="text" name="title" value="{{ detail.title }}">
+        <br>
+        <label for="content">文章内容</label>
+        <input type="textarea" name="content" form="usrform" class="textarea" value="{{ detail.content }}">
+        <br>
+    {% else %}
+        <label for="title">文章标题</label>
+        <input type="text" name="title" >
+        <br>
+        <label for="content">文章内容</label>
+        <input type="textarea" name="content" form="usrform" class="textarea">
+        <br>
+    {% endif %}
+    <input type="submit">
+</form>
+
+
+</body>
+</html>
