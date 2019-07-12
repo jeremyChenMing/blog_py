@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from rest_framework.response import Response
-from rest_framework.request import Request
+# from rest_framework.response import Response
+# from rest_framework.request import Request
 from django.core.paginator import Paginator
-from django.core.files.base import ContentFile
-from django.forms.models import model_to_dict
-# from . import models
+# from django.core.files.base import ContentFile
+import datetime
+import os
+from django.conf import settings
+
 from .models import *
 from django.core import serializers
 try:
@@ -185,7 +187,7 @@ def artical_user(request, user_id):
             if n == 'user':
                 dicts[n] = {}
         p2.append(dicts)
-    return JsonResponse({'total': len(p2), 'items': p2})
+    return JsonResponse({'count': len(p2), 'items': p2})
 
 
 # 用户信息
@@ -213,54 +215,92 @@ def edit_user(request, user_id):
     return JsonResponse({})
 
 
+# 方法
+def deal_class_person_message(cls):
+    new_dict = {}
+    dicts = cls.to_dict()
+    for n in dicts:
+        if n == 'password' or n == 'agree':
+            pass
+        else:
+            if n == 'avatar':
+                new_dict[n] = str(dicts[n])
+            else:
+                new_dict[n] = dicts[n]
+    return new_dict
+
+
 # 登录
 def login(request):
     users = User.objects.all()
     result = json.loads(request.body)
     for x in users:
         if x.user_name == result['username'] and x.password == result['password']:
-            return JsonResponse(get_create_model_fields(x))
+            new_dict = deal_class_person_message(x)
+            return JsonResponse(new_dict)
     return JsonResponse({'code': 400, 'msg': '用户名或密码错误'})
 
 
 # 获取用户详情
 def get_user(request, user_id):
     user_detail = User.objects.get(pk=user_id)
-    dicts = user_detail.to_dict()
-    new_dict = {}
-    for n in dicts:
-        if n == 'password' or n == 'agree':
-            pass
-        else:
-            if n == 'avatar':
-                dicts['avatar'] = str(dicts['avatar'])
-                new_dict[n] = str(dicts[n])
-            new_dict[n] = str(dicts[n])
+    new_dict = deal_class_person_message(user_detail)
     return JsonResponse(new_dict)
 
 
 # 上传头像
-def upload_avatar(request, user_id):
-    user_detail = User.objects.get(pk=user_id)
-    file_content = ContentFile(request.FILES['avatar'].read())
-    user_detail.avatar.save(request.FILES['avatar'].name, file_content)
-    return JsonResponse({"path": user_detail.avatar.name})
+def upload_avatar(request):
+    f1 = request.FILES.get('avatar')
+    path = request.FILES.get('avatar').name
+    d = datetime.date.today()
+    path1 = os.path.join(settings.BASE_DIR, "media", "avatar", d.strftime('%Y'), d.strftime('%m'), d.strftime('%d'), path)
+    path2 = os.path.join("avatar", str(d.year), d.strftime('%m'), d.strftime('%d'), path)
+    with open(path1, 'wb') as f:
+        for c in f1.chunks():
+            f.write(c)
+    return JsonResponse({'path': path2})
 
 
 # 评论列表
 def comment_list(request):
     ar_id = request.GET.get('artical_id', '')
-
     arse = Artical.objects.filter(id=ar_id).first()
     if arse:
         comments = arse.artical_comment.all()
     else:
         comments = []
     p1 = list()
+    p2 = list()
     for x in comments:
         dicts = x.to_dict()
-        p1.append(dicts)
+        if dicts['to_comment']:
+            p2.append(dicts)
+        else:
+            dicts['comment_children'] = list()
+            p1.append(dicts)
+
+    for a in p2:
+        for b in p1:
+            if b['id'] == a['to_comment']:
+                b['comment_children'].append(a)
+
     return JsonResponse({'items': p1})
+
+
+def comment_user(request):
+    ur_id = request.GET.get('user_id', '')
+    urse = User.objects.filter(id=ur_id).first()
+    if urse:
+        comments = urse.comment_user.all()
+    else:
+        comments = []
+    p1 = list()
+    for x in comments:
+        dicts = x.to_dict()
+        # if not dicts['to_comment']:
+        #     p1.append(dicts)
+        p1.append(dicts)
+    return JsonResponse({'count': len(p1),'items': p1})
 
 
 # 创建评论
@@ -273,6 +313,9 @@ def post_comment(request):
         new_obj['word'] = result['word']
         new_obj['belong_artical'] = artical_obj
         new_obj['belong_user'] = user_obj
+        if 'to_comment' in result and result['to_comment']:
+            new_obj['to_comment'] = result['to_comment']
+
         Comment.objects.create(**new_obj)
         return JsonResponse({})
     except Exception as e:

@@ -37,7 +37,7 @@ class Comment(models.Model):
     # 评论文章的人的id
     belong_user = models.ForeignKey(User, null=True, related_name="comment_user", on_delete=models.CASCADE)
     # 对谁进行评论者的id
-    to_user = models.ForeignKey(User, null=True, related_name="user_user", on_delete=models.CASCADE)
+    to_comment = models.CharField(max_length=36, default='')
 
     def __str__(self):
         return self.word

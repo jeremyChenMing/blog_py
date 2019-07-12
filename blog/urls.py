@@ -23,5 +23,6 @@ urlpatterns = [
     path('user_edit/<str:user_id>', views.edit_user),
     # 评论
     path('comments', views.comment_list),
+    path('comments_user', views.comment_user),
     path('create_comment', views.post_comment),
 ]
