@@ -99,9 +99,9 @@ def example(request):
     if classify == 'recommend':
         classify = ''
     if time == 'down':
-        time = '-updated_at'
+        time = '-created_at'
     else:
-        time = 'updated_at'
+        time = 'created_at'
 
     if hot == 'down':
         hot = 'hots'
@@ -296,11 +296,15 @@ def comment_user(request):
         comments = []
     p1 = list()
     for x in comments:
+        user = deal_class_person_message(x.belong_user)
         dicts = x.to_dict()
-        # if not dicts['to_comment']:
-        #     p1.append(dicts)
+        dicts['belong_user'] = user
+        if dicts['to_comment']:
+            select_artical = Comment.objects.filter(id=dicts['to_comment']).first()
+            ins = deal_class_person_message(select_artical.belong_user)
+            dicts['to_comment_dict'] = ins
         p1.append(dicts)
-    return JsonResponse({'count': len(p1),'items': p1})
+    return JsonResponse({'count': len(p1), 'items': p1})
 
 
 # 创建评论
