@@ -22,9 +22,11 @@ class Artical(models.Model):
     title = models.CharField(max_length=102, default='默认标题')
     classify = models.CharField(max_length=20, default='')
     hots = models.IntegerField(default=0)
+    nices = models.IntegerField(default=0)
     # user_id = models.CharField(max_length=36)
     content = models.TextField(null=True)
     user = models.ForeignKey(User, null=True, related_name="artical", on_delete=models.CASCADE)
+    user_like = models.ManyToManyField(User, related_name="like_user", blank=True)
 
     def __str__(self):
         return self.title
@@ -42,3 +44,12 @@ class Comment(models.Model):
     def __str__(self):
         return self.word
 
+
+# class Nice(models.Model):
+#     # 点赞文章的id
+#     to_artical = models.ForeignKey(Artical, null=True, related_name="to_artical", on_delete=models.CASCADE)
+#     # 点赞的人的id
+#     belong_user = models.ForeignKey(User, null=True, related_name="belong_user", on_delete=models.CASCADE)
+#
+#     def __str__(self):
+#         return self.to_artical

@@ -92,24 +92,40 @@ def edit_action(request):
 def example(request):
     page = request.GET.get('page', 1)
     page_size = request.GET.get('page_size', 10)
+    group = request.GET.get('group', '')
     word = request.GET.get('word', '')
-    time = request.GET.get('time', 'down')
-    hot = request.GET.get('hot', 'down')
     classify = request.GET.get('classifiy', '')
     if classify == 'recommend':
         classify = ''
-    if time == 'down':
-        time = '-created_at'
-    else:
-        time = 'created_at'
 
-    if hot == 'down':
-        hot = 'hots'
-    else:
-        hot = '-hots'
     # order_by 用于排序， -代表倒序排列
     # 现过滤查询在分页
-    artical = Artical.objects.filter(title__contains=word, classify__contains=classify).order_by(hot).order_by(time)
+    if group == 'time':
+        time = request.GET.get('time', 'down')
+        if time == 'down':
+            time = '-created_at'
+        else:
+            time = 'created_at'
+        artical = Artical.objects.filter(title__contains=word, classify__contains=classify).order_by(time)
+
+    elif group == 'hot':
+        hot = request.GET.get('hot', 'down')
+        if hot == 'down':
+            hot = 'hots'
+        else:
+            hot = '-hots'
+        artical = Artical.objects.filter(title__contains=word, classify__contains=classify).order_by(hot)
+
+    elif group == 'nice':
+        nice = request.GET.get('nice', 'down')
+        if nice == 'down':
+            nice = 'nices'
+        else:
+            nice = '-nices'
+        artical = Artical.objects.filter(title__contains=word, classify__contains=classify).order_by(nice)
+    else:
+        pass
+
     pagedata = Paginator(artical, page_size)
     if pagedata.num_pages < int(page):
         return JsonResponse({'total': 0, 'items': []})
@@ -126,6 +142,15 @@ def example(request):
                 del dicts[n]['agree']
                 del dicts[n]['created_at']
                 del dicts[n]['updated_at']
+            if n == 'user_like':
+                for k in dicts[n]:
+                    print(type(x))
+                    del k['password']
+                    del k['phone']
+                    del k['prefix']
+                    del k['agree']
+                    del k['created_at']
+                    del k['updated_at']
         p2.append(dicts)
     response = JsonResponse({'total': pagedata.count, 'items': p2})
     return response
@@ -174,6 +199,15 @@ def details(request, page_id):
             del dicts[n]['agree']
             del dicts[n]['created_at']
             del dicts[n]['updated_at']
+        if n == 'user_like':
+            for x in dicts[n]:
+                print(type(x))
+                del x['password']
+                del x['phone']
+                del x['prefix']
+                del x['agree']
+                del x['created_at']
+                del x['updated_at']
     return JsonResponse(dicts)
 
 
@@ -324,3 +358,18 @@ def post_comment(request):
         return JsonResponse({})
     except Exception as e:
         return JsonResponse({'code': 400, 'msg': str(e)})
+
+
+# 点赞
+def post_nice(request):
+    result = json.loads(request.body)
+    ar_id = result['artical_id']
+    article = Artical.objects.get(pk=ar_id)
+    print(article)
+    if result['action'] == 'like':
+        article.user_like.add(result['user_id'])
+        return JsonResponse({})
+    else:
+        article.user_like.remove(result['user_id'])
+        return JsonResponse({})
+

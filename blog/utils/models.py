@@ -34,7 +34,16 @@ class Model(models.Model):
                 if self.pk is None:
                     data[f.attname] = []
                 else:
-                    data[f.attname] = list(f.value_from_object(self).values_list('pk', flat=True))
+                    data[f.attname] = [to_dict(f1) for f1 in f.value_from_object(self)]
+
+                    # data[f.attname]
+                    # if f.value_from_object(self):
+                    #     for f1 in f.value_from_object(self):
+                    #         data[f.attname].append(to_dict(f1))
+
+                    # print(hasattr(list(f.value_from_object(self)), 'values_list'), '---')
+                    # data[f.attname] = list(f.value_from_object(self).values_list('pk', flat=True))
+
             elif isinstance(f, ForeignKey) and f.value_from_object(self):
                 data[f.name] = to_dict(getattr(self, f.name))
             else:

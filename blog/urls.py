@@ -25,4 +25,6 @@ urlpatterns = [
     path('comments', views.comment_list),
     path('comments_user', views.comment_user),
     path('create_comment', views.post_comment),
+    # 点赞
+    path('handle_nice', views.post_nice),
 ]
