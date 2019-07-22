@@ -45,11 +45,11 @@ class Comment(models.Model):
         return self.word
 
 
-# class Nice(models.Model):
-#     # 点赞文章的id
-#     to_artical = models.ForeignKey(Artical, null=True, related_name="to_artical", on_delete=models.CASCADE)
-#     # 点赞的人的id
-#     belong_user = models.ForeignKey(User, null=True, related_name="belong_user", on_delete=models.CASCADE)
-#
-#     def __str__(self):
-#         return self.to_artical
+class FriendShip(models.Model):
+    # 被关注
+    followed = models.ForeignKey(User, null=True, related_name="followed", on_delete=models.CASCADE)
+    # 关注的人
+    follower = models.ForeignKey(User, null=True, related_name="follower", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "follow:{},fan:{}".format(self.followed, self.follower)

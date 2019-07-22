@@ -144,7 +144,6 @@ def example(request):
                 del dicts[n]['updated_at']
             if n == 'user_like':
                 for k in dicts[n]:
-                    print(type(x))
                     del k['password']
                     del k['phone']
                     del k['prefix']
@@ -187,10 +186,17 @@ def putexam(request, put_id):
 
 
 def details(request, page_id):
+    login_user = request.GET.get('login_id', '')
     detail_message = Artical.objects.get(id=page_id)
     detail_message.hots += 1
     detail_message.save()
     dicts = detail_message.to_dict()
+
+    dicts['followed'] = False
+    has = FriendShip.objects.filter(followed=detail_message.user.id, follower=login_user).first()
+    if has:
+        dicts['followed'] = True
+
     for n in dicts:
         if n == 'user':
             del dicts[n]['password']
@@ -201,7 +207,6 @@ def details(request, page_id):
             del dicts[n]['updated_at']
         if n == 'user_like':
             for x in dicts[n]:
-                print(type(x))
                 del x['password']
                 del x['phone']
                 del x['prefix']
@@ -353,7 +358,6 @@ def post_comment(request):
         new_obj['belong_user'] = user_obj
         if 'to_comment' in result and result['to_comment']:
             new_obj['to_comment'] = result['to_comment']
-
         Comment.objects.create(**new_obj)
         return JsonResponse({})
     except Exception as e:
@@ -365,11 +369,65 @@ def post_nice(request):
     result = json.loads(request.body)
     ar_id = result['artical_id']
     article = Artical.objects.get(pk=ar_id)
-    print(article)
     if result['action'] == 'like':
         article.user_like.add(result['user_id'])
+        article.nices = article.nices + 1
+        article.save();
         return JsonResponse({})
     else:
         article.user_like.remove(result['user_id'])
+        article.nices = article.nices - 1
+        article.save();
         return JsonResponse({})
 
+
+# 获取点赞的文章
+def get_nice_person(request, user_id):
+    user_detail = User.objects.get(pk=user_id)
+    users = user_detail.like_user.all();
+    p1 = list()
+    for x in users:
+        dicts = x.to_dict()
+        p1.append(dicts)
+    return JsonResponse({"count": len(p1), "items": p1})
+
+
+# 关注
+def post_follow(request):
+    result = json.loads(request.body)
+    follower_id = result['follower_id']
+    followed_id = result['followed_id']
+    have = FriendShip.objects.filter(followed=followed_id, follower=follower_id).first()
+    if have:
+        FriendShip.objects.filter(followed=followed_id, follower=follower_id).delete()
+    else:
+        # 发出关注的人
+        follower = User.objects.get(pk=follower_id)
+        # 被关注的人
+        followed = User.objects.get(pk=followed_id)
+        new_obj = dict()
+        new_obj['follower'] = follower
+        new_obj['followed'] = followed
+        FriendShip.objects.create(**new_obj)
+    return JsonResponse({})
+
+
+# 获取粉丝
+def get_fans(request, user_id):
+    user_message = User.objects.get(id=user_id)
+    print(user_message)
+    fans = user_message.followed.all()
+    arr = list()
+    for x in fans:
+        arr.append(x.to_dict())
+    return JsonResponse({"count": len(arr), "items": arr})
+
+
+# 获取关注的人
+def get_followers(request, user_id):
+    user_message = User.objects.get(id=user_id)
+    followers = user_message.follower.all()
+    arr = list()
+    for x in followers:
+        arr.append(x.to_dict())
+    return JsonResponse({"count": len(arr), "items": arr})

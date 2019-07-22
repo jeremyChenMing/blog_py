@@ -27,4 +27,9 @@ urlpatterns = [
     path('create_comment', views.post_comment),
     # 点赞
     path('handle_nice', views.post_nice),
+    path('get_nice/<str:user_id>', views.get_nice_person),
+    # 关注
+    path('follow', views.post_follow),
+    path('fans/<str:user_id>', views.get_fans),
+    path('followers/<str:user_id>', views.get_followers),
 ]

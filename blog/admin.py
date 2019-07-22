@@ -15,6 +15,11 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = ('belong_artical', 'belong_user', 'word')
 
 
+class FriendAdmin(admin.ModelAdmin):
+    list_display = ('followed', 'follower')
+
+
 admin.site.register(models.Artical, ArticalAdmin)
 admin.site.register(models.User, UsersAdmin)
 admin.site.register(models.Comment, CommentAdmin)
+admin.site.register(models.FriendShip, FriendAdmin)
