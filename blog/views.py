@@ -94,7 +94,7 @@ def example(request):
     page_size = request.GET.get('page_size', 10)
     group = request.GET.get('group', '')
     word = request.GET.get('word', '')
-    classify = request.GET.get('classifiy', '')
+    classify = request.GET.get('classify', '')
     if classify == 'recommend':
         classify = ''
 
@@ -196,7 +196,6 @@ def details(request, page_id):
     has = FriendShip.objects.filter(followed=detail_message.user.id, follower=login_user).first()
     if has:
         dicts['followed'] = True
-
     for n in dicts:
         if n == 'user':
             del dicts[n]['password']
