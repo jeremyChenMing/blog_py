@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from rest_framework.urlpatterns import format_suffix_patterns
 
 urlpatterns = [
     path('', views.index),
@@ -16,7 +17,7 @@ urlpatterns = [
 
 
     path('users', views.user_list),
-    path('upload/<str:user_id>', views.upload_avatar),
+    path('upload', views.upload_avatar),
     path('login', views.login),
     path('create_user', views.create_user),
     path('user_detail/<str:user_id>', views.get_user),
@@ -32,4 +33,12 @@ urlpatterns = [
     path('follow', views.post_follow),
     path('fans/<str:user_id>', views.get_fans),
     path('followers/<str:user_id>', views.get_followers),
+    # 游戏记录
+    path('record', views.post_game),
+    path('record_list', views.get_game),
+    # 测试接口
+    path('test_env', views.back_env),
+
+    path('articals', views.artical_list),
+    path('articals/<str:pk>', views.artical_detail),
 ]

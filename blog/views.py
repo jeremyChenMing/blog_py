@@ -1,22 +1,98 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-# from rest_framework.response import Response
-# from rest_framework.request import Request
 from django.core.paginator import Paginator
 # from django.core.files.base import ContentFile
 import datetime
+import time
 import os
 from django.conf import settings
-
+from django.contrib import auth
+# 获取model 以及序列化querySet
 from .models import *
 from django.core import serializers
+
+# 获取post请求的参数
 try:
     import simplejson as json
 except:
     import json
 
-# from django.views.decorators.csrf import csrf_exempt
-# @csrf_exempt
+from rest_framework.decorators import api_view
+from .serializers import ArticalSerializer, PageNumberPagination
+from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
+
+
+@api_view(['GET', 'POST'])
+@csrf_exempt
+def artical_list(request):
+    if request.method == 'GET':
+        query = request.query_params
+        if query['group'] == 'time':
+            time_check = query['time']
+            if time_check == 'down':
+                time_check = '-created_at'
+            else:
+                time_check = 'created_at'
+            articals = Artical.objects.filter(title__contains=query['word'], classify__contains=query['classify']).order_by(time_check)
+
+        elif query['group'] == 'hot':
+            hot = query['hot']
+            if hot == 'down':
+                hot = 'hots'
+            else:
+                hot = '-hots'
+            articals = Artical.objects.filter(title__contains=query['word'], classify__contains=query['classify']).order_by(hot)
+
+        elif query['group'] == 'nice':
+            nice = query['nice']
+            if nice == 'down':
+                nice = 'nices'
+            else:
+                nice = '-nices'
+            articals = Artical.objects.filter(title__contains=query['word'], classify__contains=query['classify']).order_by(nice)
+        else:
+            pass
+
+        page_obj = PageNumberPagination()
+        page_data = page_obj.paginate_queryset(articals, request)
+        ser_obj = ArticalSerializer(page_data, many=True)
+        return page_obj.get_paginated_response(ser_obj.data)
+
+    elif request.method == 'POST':
+        serializer = ArticalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.create(request.data)
+            return Response({}, status=200)
+        return Response(serializer.errors, status=500)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@csrf_exempt
+def artical_detail(request, pk):
+    try:
+        artical = Artical.objects.get(pk=pk)
+    except Artical.DoseNotExist:
+        return Response(status=404)
+
+    if request.method == 'GET':
+        req = {"hots": artical.hots + 1}
+        serializer = ArticalSerializer(artical, data=req)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=500)
+
+    elif request.method == 'PUT':
+        serializer = ArticalSerializer(artical, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    elif request.method == 'DELETE':
+        artical.delete()
+        return Response({}, status=200)
 
 
 def get_model_fields(model):
@@ -85,10 +161,35 @@ def edit_action(request):
 
 
 '''
-完全纯数据结构
+完全纯数据结构, 前后端分离开始处----------------------------------
 '''
 
 
+# 验证
+def verifi(func):
+    def inner(request):
+        token = request.META.get("HTTP_AUTHORIZATION")
+        if token:
+            id = token[4:36]
+            old_time = float(token[37:])
+            # otherStyleTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(old_time))
+            # print(otherStyleTime)
+            has_id = User.objects.get(id=id)
+            if has_id:
+                now_time = time.time()
+                if (now_time - old_time) / 60 > 30:
+                    return HttpResponse('用户登录失效', status=401)
+            else:
+                return HttpResponse('用户不存在', status=401)
+            return func(request)
+        else:
+            return HttpResponse('Unauthorized', status=401)
+
+
+    return inner
+
+
+# 获取查询文章列表
 def example(request):
     page = request.GET.get('page', 1)
     page_size = request.GET.get('page_size', 10)
@@ -128,7 +229,7 @@ def example(request):
 
     pagedata = Paginator(artical, page_size)
     if pagedata.num_pages < int(page):
-        return JsonResponse({'total': 0, 'items': []})
+        return JsonResponse({'total': pagedata.count, 'items': []})
     p1 = pagedata.page(page)
 
     p2 = []
@@ -155,12 +256,14 @@ def example(request):
     return response
 
 
+# 删除其中一个文章
 def delexam(request, del_id):
     if request.method == 'DELETE':
         Artical.objects.filter(pk=del_id).delete()
         return JsonResponse({})
 
 
+# 创建一篇文章
 def postexam(request):
     try:
         result = json.loads(request.body)
@@ -172,6 +275,7 @@ def postexam(request):
         return JsonResponse({'code': 400, 'err': str(e)})
 
 
+# 更新文章
 def putexam(request, put_id):
     result = json.loads(request.body)
     if request.method == 'PUT':
@@ -185,6 +289,7 @@ def putexam(request, put_id):
         return JsonResponse({'code': 400, 'msg': '方法错误！'})
 
 
+# 文章的详情
 def details(request, page_id):
     login_user = request.GET.get('login_id', '')
     detail_message = Artical.objects.get(id=page_id)
@@ -215,7 +320,7 @@ def details(request, page_id):
     return JsonResponse(dicts)
 
 
-# 用户下的文章列表
+# 某一用户下的文章列表
 def artical_user(request, user_id):
     artical = Artical.objects.filter(user_id=user_id)
     p2 = []
@@ -228,7 +333,7 @@ def artical_user(request, user_id):
     return JsonResponse({'count': len(p2), 'items': p2})
 
 
-# 用户信息
+# 用户列表
 def user_list(request):
     users = User.objects.all()
     response = JsonResponse({'items': get_models_fields(users)})
@@ -238,22 +343,38 @@ def user_list(request):
 # 创建用户
 def create_user(request):
     result = json.loads(request.body)
-    User.objects.create(**result)
-    return JsonResponse({})
+    has = User.objects.filter(user_name=result['user_name']).first();
+    if has:
+        print('存在')
+        return JsonResponse({'code': 400, 'msg': '用户名已经存在'})
+    else:
+        print('不存在')
+        User.objects.create(**result)
+        latest_user = User.objects.all().order_by('-created_at')[0];
+        return JsonResponse(deal_class_person_message(latest_user))
 
 
 # 编辑用户
 def edit_user(request, user_id):
     result = json.loads(request.body)
     user_detail = User.objects.get(pk=user_id)
-    user_detail.nickname = result['nickname']
-    user_detail.web_site = result['web_site']
-    user_detail.avatar = result['avatar']
+    if result['nickname']:
+        user_detail.nickname = result['nickname']
+    if result['web_site']:
+        user_detail.web_site = result['web_site']
+    if result['avatar']:
+        user_detail.avatar = result['avatar']
     user_detail.save()
     return JsonResponse({})
 
 
-# 方法
+# 获取用户详情
+def get_user(request, user_id):
+    user_detail = User.objects.get(pk=user_id)
+    new_dict = deal_class_person_message(user_detail)
+    return JsonResponse(new_dict)
+
+# 方法---去除用户密码等字段
 def deal_class_person_message(cls):
     new_dict = {}
     dicts = cls.to_dict()
@@ -270,20 +391,16 @@ def deal_class_person_message(cls):
 
 # 登录
 def login(request):
-    users = User.objects.all()
     result = json.loads(request.body)
-    for x in users:
-        if x.user_name == result['username'] and x.password == result['password']:
-            new_dict = deal_class_person_message(x)
-            return JsonResponse(new_dict)
+    username = result['username']
+    password = result['password']
+    user = User.objects.filter(user_name=username, password=password).first()
+    if user:
+        new_dict = deal_class_person_message(user)
+        new_dict['token'] = '{}-{}'.format(new_dict['id'], time.time())
+        print(new_dict['token'])
+        return JsonResponse(new_dict)
     return JsonResponse({'code': 400, 'msg': '用户名或密码错误'})
-
-
-# 获取用户详情
-def get_user(request, user_id):
-    user_detail = User.objects.get(pk=user_id)
-    new_dict = deal_class_person_message(user_detail)
-    return JsonResponse(new_dict)
 
 
 # 上传头像
@@ -292,11 +409,19 @@ def upload_avatar(request):
     path = request.FILES.get('avatar').name
     d = datetime.date.today()
     path1 = os.path.join(settings.BASE_DIR, "media", "avatar", d.strftime('%Y'), d.strftime('%m'), d.strftime('%d'), path)
+    text = os.path.join(settings.BASE_DIR, "media", "avatar", d.strftime('%Y'), d.strftime('%m'), d.strftime('%d'))
     path2 = os.path.join("avatar", str(d.year), d.strftime('%m'), d.strftime('%d'), path)
+    if not os.path.exists(text):
+        os.makedirs(text)
     with open(path1, 'wb') as f:
         for c in f1.chunks():
             f.write(c)
     return JsonResponse({'path': path2})
+
+
+'''
+评论相关接口开始处
+'''
 
 
 # 评论列表
@@ -325,6 +450,25 @@ def comment_list(request):
     return JsonResponse({'items': p1})
 
 
+# 创建评论
+def post_comment(request):
+    try:
+        result = json.loads(request.body)
+        artical_obj = Artical.objects.get(id=result['belong_artical'])
+        user_obj = User.objects.get(id=result['belong_user'])
+        new_obj = dict()
+        new_obj['word'] = result['word']
+        new_obj['belong_artical'] = artical_obj
+        new_obj['belong_user'] = user_obj
+        if 'to_comment' in result and result['to_comment']:
+            new_obj['to_comment'] = result['to_comment']
+        Comment.objects.create(**new_obj)
+        return JsonResponse({})
+    except Exception as e:
+        return JsonResponse({'code': 400, 'msg': str(e)})
+
+
+# 某一用户参与的评论条数列表---个人界面
 def comment_user(request):
     ur_id = request.GET.get('user_id', '')
     urse = User.objects.filter(id=ur_id).first()
@@ -345,24 +489,6 @@ def comment_user(request):
     return JsonResponse({'count': len(p1), 'items': p1})
 
 
-# 创建评论
-def post_comment(request):
-    try:
-        result = json.loads(request.body)
-        artical_obj = Artical.objects.get(id=result['belong_artical'])
-        user_obj = User.objects.get(id=result['belong_user'])
-        new_obj = dict()
-        new_obj['word'] = result['word']
-        new_obj['belong_artical'] = artical_obj
-        new_obj['belong_user'] = user_obj
-        if 'to_comment' in result and result['to_comment']:
-            new_obj['to_comment'] = result['to_comment']
-        Comment.objects.create(**new_obj)
-        return JsonResponse({})
-    except Exception as e:
-        return JsonResponse({'code': 400, 'msg': str(e)})
-
-
 # 点赞
 def post_nice(request):
     result = json.loads(request.body)
@@ -380,7 +506,7 @@ def post_nice(request):
         return JsonResponse({})
 
 
-# 获取点赞的文章
+# 获取用户点赞的文章列表
 def get_nice_person(request, user_id):
     user_detail = User.objects.get(pk=user_id)
     users = user_detail.like_user.all();
@@ -391,7 +517,7 @@ def get_nice_person(request, user_id):
     return JsonResponse({"count": len(p1), "items": p1})
 
 
-# 关注
+# 关注 与 取消关注
 def post_follow(request):
     result = json.loads(request.body)
     follower_id = result['follower_id']
@@ -430,3 +556,58 @@ def get_followers(request, user_id):
     for x in followers:
         arr.append(x.to_dict())
     return JsonResponse({"count": len(arr), "items": arr})
+
+
+# 相关游戏记录
+def get_game(request):
+    page = request.GET.get('page', 1)
+    page_size = request.GET.get('page_size', 10)
+    arr = Game.objects.all().order_by('-kilometer')
+    pagedata = Paginator(arr, page_size)
+    if pagedata.num_pages < int(page):
+        return JsonResponse({'total': 0, 'items': []})
+    p1 = pagedata.page(page)
+    p2 = list()
+    for x in p1:
+        dicts = x.to_dict();
+        for n in dicts:
+            if n == 'user':
+                del dicts[n]['password']
+                del dicts[n]['phone']
+                del dicts[n]['prefix']
+                del dicts[n]['agree']
+                del dicts[n]['created_at']
+                del dicts[n]['updated_at']
+        p2.append(dicts)
+    return JsonResponse({'total': pagedata.count, "items": p2})
+
+
+# 创建游戏记录
+def post_game(request):
+    result = json.loads(request.body)
+    user_id = result['user_id']
+    try:
+        user = User.objects.get(id=user_id)
+        has_user = Game.objects.filter(user=user).first()
+        if has_user:
+            if has_user.kilometer < result["kilometer"]:
+                has_user.kilometer = result['kilometer']
+                has_user.save()
+        else:
+            new_obj = dict()
+            new_obj['kilometer'] = result['kilometer']
+            new_obj['user'] = user
+            Game.objects.create(**new_obj)
+        return JsonResponse({})
+    except Exception as e:
+        return JsonResponse({'code': 400, 'err': str(e)})
+
+
+# 测试接口
+def back_env(request):
+    type = request.GET.get('type', '')
+    print(type)
+    if type == "com":
+        time.sleep(2)
+        return JsonResponse({"classname": "com"})
+    return JsonResponse({})

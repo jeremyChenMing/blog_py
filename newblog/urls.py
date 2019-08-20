@@ -19,11 +19,32 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 
-app_name = 'blog_space'
+# Django REST 框架
+# from django.contrib.auth.models import User
+from blog.models import User
+from rest_framework import routers, serializers, viewsets
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = User
+        # fields = ['url', 'username', 'email', 'is_staff']
+        fields = ['user_name', 'nickname', 'phone', 'web_site']
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+router = routers.DefaultRouter()
+router.register(r'users', UserViewSet)
+
 
 urlpatterns = [
+    url(r'^', include(router.urls)),
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('blog/', include(('blog.urls', 'blog'), namespace='blog_space'))
 ]
 

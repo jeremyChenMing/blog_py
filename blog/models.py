@@ -15,7 +15,7 @@ class User(models.Model):
     avatar = models.ImageField(upload_to='avatar/%Y/%m/%d', null=True)
 
     def __str__(self):
-        return self.user_name
+        return self.nickname
 
 
 class Artical(models.Model):
@@ -53,3 +53,12 @@ class FriendShip(models.Model):
 
     def __str__(self):
         return "follow:{},fan:{}".format(self.followed, self.follower)
+
+
+# 游戏
+class Game(models.Model):
+    kilometer = models.IntegerField(default=0)
+    user = models.ForeignKey(User, null=True, related_name="game_user", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "name: {}".format(self.user)
