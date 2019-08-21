@@ -17,83 +17,6 @@ try:
 except:
     import json
 
-from rest_framework.decorators import api_view
-from .serializers import ArticalSerializer, PageNumberPagination
-from rest_framework.response import Response
-from django.views.decorators.csrf import csrf_exempt
-
-
-@api_view(['GET', 'POST'])
-@csrf_exempt
-def artical_list(request):
-    if request.method == 'GET':
-        query = request.query_params
-        if query['group'] == 'time':
-            time_check = query['time']
-            if time_check == 'down':
-                time_check = '-created_at'
-            else:
-                time_check = 'created_at'
-            articals = Artical.objects.filter(title__contains=query['word'], classify__contains=query['classify']).order_by(time_check)
-
-        elif query['group'] == 'hot':
-            hot = query['hot']
-            if hot == 'down':
-                hot = 'hots'
-            else:
-                hot = '-hots'
-            articals = Artical.objects.filter(title__contains=query['word'], classify__contains=query['classify']).order_by(hot)
-
-        elif query['group'] == 'nice':
-            nice = query['nice']
-            if nice == 'down':
-                nice = 'nices'
-            else:
-                nice = '-nices'
-            articals = Artical.objects.filter(title__contains=query['word'], classify__contains=query['classify']).order_by(nice)
-        else:
-            pass
-
-        page_obj = PageNumberPagination()
-        page_data = page_obj.paginate_queryset(articals, request)
-        ser_obj = ArticalSerializer(page_data, many=True)
-        return page_obj.get_paginated_response(ser_obj.data)
-
-    elif request.method == 'POST':
-        serializer = ArticalSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.create(request.data)
-            return Response({}, status=200)
-        return Response(serializer.errors, status=500)
-
-
-@api_view(['GET', 'PUT', 'DELETE'])
-@csrf_exempt
-def artical_detail(request, pk):
-    try:
-        artical = Artical.objects.get(pk=pk)
-    except Artical.DoseNotExist:
-        return Response(status=404)
-
-    if request.method == 'GET':
-        req = {"hots": artical.hots + 1}
-        serializer = ArticalSerializer(artical, data=req)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=200)
-        return Response(serializer.errors, status=500)
-
-    elif request.method == 'PUT':
-        serializer = ArticalSerializer(artical, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    elif request.method == 'DELETE':
-        artical.delete()
-        return Response({}, status=200)
-
 
 def get_model_fields(model):
     json_str = serializers.serialize('json', [model, ], use_natural_foreign_keys=True)
@@ -398,7 +321,6 @@ def login(request):
     if user:
         new_dict = deal_class_person_message(user)
         new_dict['token'] = '{}-{}'.format(new_dict['id'], time.time())
-        print(new_dict['token'])
         return JsonResponse(new_dict)
     return JsonResponse({'code': 400, 'msg': '用户名或密码错误'})
 
@@ -540,7 +462,6 @@ def post_follow(request):
 # 获取粉丝
 def get_fans(request, user_id):
     user_message = User.objects.get(id=user_id)
-    print(user_message)
     fans = user_message.followed.all()
     arr = list()
     for x in fans:
@@ -606,7 +527,6 @@ def post_game(request):
 # 测试接口
 def back_env(request):
     type = request.GET.get('type', '')
-    print(type)
     if type == "com":
         time.sleep(2)
         return JsonResponse({"classname": "com"})

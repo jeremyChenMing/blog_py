@@ -8,7 +8,7 @@ class ArticalAdmin(admin.ModelAdmin):
 
 
 class UsersAdmin(admin.ModelAdmin):
-    list_display = ('user_name', 'nickname', 'phone', 'created_at')
+    list_display = ('user_name', 'nickname', 'phone', 'created_at', 'password')
 
 
 class CommentAdmin(admin.ModelAdmin):

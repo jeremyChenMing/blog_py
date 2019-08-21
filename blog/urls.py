@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import rest_views
 from rest_framework.urlpatterns import format_suffix_patterns
 
 urlpatterns = [
@@ -39,6 +40,9 @@ urlpatterns = [
     # 测试接口
     path('test_env', views.back_env),
 
-    path('articals', views.artical_list),
-    path('articals/<str:pk>', views.artical_detail),
+    path('articals', rest_views.artical_list),
+    path('articals/<str:pk>', rest_views.artical_detail),
+    path('user_info', rest_views.user_column),
+    path('user_info/<str:pk>', rest_views.user_info),
+    path('comment_info', rest_views.comment_list),
 ]

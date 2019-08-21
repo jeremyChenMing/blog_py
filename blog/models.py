@@ -12,7 +12,8 @@ class User(models.Model):
     prefix = models.CharField(max_length=2, default='86')
     web_site = models.CharField(max_length=100)
     agree = models.BooleanField(default=False)
-    avatar = models.ImageField(upload_to='avatar/%Y/%m/%d', null=True)
+    # avatar = models.ImageField(upload_to='avatar/%Y/%m/%d', null=True)
+    avatar = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return self.nickname

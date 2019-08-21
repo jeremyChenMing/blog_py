@@ -1,23 +1,7 @@
 from rest_framework import serializers
 from rest_framework import pagination
-from .models import Artical, User
+from .models import Artical, User, Comment
 from rest_framework.response import Response
-
-
-# 对应USER外键的关系, 一对一，多对多
-class TrackSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['nickname', 'avatar', 'id', 'user_name']
-
-
-class ArticalSerializer(serializers.ModelSerializer):
-    user = TrackSerializer(read_only=True)
-    user_like = TrackSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Artical
-        fields = ['id', 'title', 'classify', 'hots', 'nices', 'content', 'user', 'user_like', 'created_at', 'updated_at']
 
 
 # 分页
@@ -36,3 +20,45 @@ class PageNumberPagination(pagination.PageNumberPagination):
             'count': self.page.paginator.count,
             'items': data
         })
+
+
+# 文章序列化 --- 对应USER外键的关系, 一对一，多对多
+class TrackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['nickname', 'avatar', 'id', 'user_name']
+
+
+# 文章序列化
+class ArticalSerializer(serializers.ModelSerializer):
+    user = TrackSerializer(read_only=True)
+    user_like = TrackSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Artical
+        fields = ['id', 'title', 'classify', 'hots', 'nices', 'content', 'user', 'user_like', 'created_at', 'updated_at']
+
+
+# 用户序列化
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ['user_name', 'nickname', 'id', 'phone', 'web_site', 'avatar', 'created_at', 'updated_at', 'prefix', 'agree']
+
+
+# 文章序列化
+class TrackArticalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Artical
+        fields = ['id', 'title', 'created_at', 'updated_at']
+
+
+# 评论列表
+class CommentSerializer(serializers.ModelSerializer):
+    belong_user = TrackSerializer(read_only=True)
+    belong_artical = TrackArticalSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['word', 'to_comment', 'id', 'belong_user', 'belong_artical', 'created_at', 'updated_at']
