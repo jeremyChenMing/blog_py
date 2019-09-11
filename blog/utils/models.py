@@ -1,7 +1,7 @@
 import uuid
 from django.db.models import *
 from django.db import models
-
+from django.contrib.auth.models import AbstractUser, AbstractBaseUser, PermissionsMixin
 
 def gen_uuid():
     return uuid.uuid4().hex
@@ -18,7 +18,7 @@ def to_dict(self):
     return data
 
 
-class Model(models.Model):
+class Model(AbstractUser):
     id = models.CharField(primary_key=True, max_length=36, default=gen_uuid, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

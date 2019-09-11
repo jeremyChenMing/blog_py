@@ -28,8 +28,7 @@ from rest_framework import routers, serializers, viewsets
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        # fields = ['url', 'username', 'email', 'is_staff']
-        fields = ['user_name', 'nickname', 'phone', 'web_site']
+        fields = ['username', 'email', 'phone', 'web_site']
 
 
 class UserViewSet(viewsets.ModelViewSet):
