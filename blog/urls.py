@@ -2,6 +2,7 @@ from django.urls import path
 from django.conf.urls import url
 from . import views
 from . import rest_views
+from . import class_views
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -55,11 +56,23 @@ urlpatterns = [
     # path('login_user', rest_views.login_user),
 
 
-    path('api/login', rest_views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/login', class_views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/login/refresh', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/test', rest_views.TestView.as_view()),
+    path('api/test', class_views.TestView.as_view()),
     path('api/upload', views.upload_avatar),
 
-    path('api/create_user', rest_views.create_user.as_view()),
-    path('api/user', rest_views.users.as_view(), name='users')
+    path('api/create_user', class_views.create_user.as_view()),
+    path('api/user', class_views.users.as_view(), name='users'),
+    path('api/artical_list', class_views.articalGet.as_view()),
+    path('api/artical', class_views.articalObject.as_view(), name='articals'),
+    path('api/artical_user', class_views.articalUser.as_view()),
+
+    path('api/comment', class_views.commentObj.as_view(), name='comments'),
+    path('api/comment_list', class_views.commentGet.as_view()),
+
+    path('api/nice', class_views.niceObj.as_view(), name='nices'),
+
+    path('api/follow', class_views.followObj.as_view(), name='follows'),
+    path('api/follow_list', class_views.followGet.as_view()),
+    path('api/follower', class_views.followList.as_view()),
 ]

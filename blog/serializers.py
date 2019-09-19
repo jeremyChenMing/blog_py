@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework import pagination
-from .models import User
-# Artical, Comment, FriendShip
+from .models import User, Artical, Comment, FriendShip
 from rest_framework.response import Response
 
 
@@ -27,17 +26,17 @@ class PageNumberPagination(pagination.PageNumberPagination):
 class TrackSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['nickname', 'avatar', 'id', 'user_name']
+        fields = ['nickname', 'avatar', 'id', 'username']
 
 
 # 文章序列化
-# class ArticalSerializer(serializers.ModelSerializer):
-#     user = TrackSerializer(read_only=True)
-#     user_like = TrackSerializer(many=True, read_only=True)
-#
-#     class Meta:
-#         model = Artical
-#         fields = ['id', 'title', 'classify', 'hots', 'nices', 'content', 'user', 'user_like', 'created_at', 'updated_at']
+class ArticalSerializer(serializers.ModelSerializer):
+    user = TrackSerializer(read_only=True)
+    user_like = TrackSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Artical
+        fields = ['id', 'title', 'classify', 'hots', 'nices', 'content', 'user', 'user_like', 'created_at', 'updated_at']
 
 
 # 用户序列化
@@ -47,31 +46,29 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'nickname', 'web_site', 'avatar', 'id', 'phone', 'created_at', 'updated_at']
 
-        # fields = ['username', 'email', 'id', 'phone', 'web_site', 'avatar', 'created_at', 'updated_at', 'prefix', 'agree']
+
+# 文章序列化
+class TrackArticalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Artical
+        fields = ['id', 'title', 'created_at', 'updated_at']
 
 
-# # 文章序列化
-# class TrackArticalSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Artical
-#         fields = ['id', 'title', 'created_at', 'updated_at']
-#
-#
-# # 评论列表
-# class CommentSerializer(serializers.ModelSerializer):
-#     belong_user = TrackSerializer(read_only=True)
-#     belong_artical = TrackArticalSerializer(read_only=True)
-#
-#     class Meta:
-#         model = Comment
-#         fields = ['word', 'to_comment', 'id', 'belong_user', 'belong_artical', 'created_at', 'updated_at']
-#
-#
-# # 关注
-# class FriendSerializer(serializers.ModelSerializer):
-#     followed = TrackSerializer(read_only=True)
-#     follower = TrackSerializer(read_only=True)
-#
-#     class Meta:
-#         model = FriendShip
-#         fields = ['followed', 'follower', 'created_at', 'updated_at', 'id']
+# 评论列表
+class CommentSerializer(serializers.ModelSerializer):
+    belong_user = TrackSerializer(read_only=True)
+    belong_artical = TrackArticalSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['word', 'to_comment', 'id', 'belong_user', 'belong_artical', 'created_at', 'updated_at']
+
+
+# 关注
+class FriendSerializer(serializers.ModelSerializer):
+    followed = TrackSerializer(read_only=True)
+    follower = TrackSerializer(read_only=True)
+
+    class Meta:
+        model = FriendShip
+        fields = ['followed', 'follower', 'created_at', 'updated_at', 'id']
