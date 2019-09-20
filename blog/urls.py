@@ -61,18 +61,21 @@ urlpatterns = [
     path('api/test', class_views.TestView.as_view()),
     path('api/upload', views.upload_avatar),
 
-    path('api/create_user', class_views.create_user.as_view()),
-    path('api/user', class_views.users.as_view(), name='users'),
-    path('api/artical_list', class_views.articalGet.as_view()),
-    path('api/artical', class_views.articalObject.as_view(), name='articals'),
-    path('api/artical_user', class_views.articalUser.as_view()),
+    path('api/create_user', class_views.CreateUser.as_view()),
+    path('api/user', class_views.Users.as_view(), name='Users'),
+    path('api/artical_list', class_views.ArticalGet.as_view()),
+    path('api/artical', class_views.ArticalObject.as_view(), name='articals'),
+    path('api/artical_user', class_views.ArticalUser.as_view()),
 
-    path('api/comment', class_views.commentObj.as_view(), name='comments'),
-    path('api/comment_list', class_views.commentGet.as_view()),
+    path('api/comment', class_views.CommentObj.as_view(), name='comments'),
+    path('api/comment_list', class_views.CommentGet.as_view()),
 
-    path('api/nice', class_views.niceObj.as_view(), name='nices'),
+    path('api/nice', class_views.NiceObj.as_view(), name='nices'),
 
-    path('api/follow', class_views.followObj.as_view(), name='follows'),
-    path('api/follow_list', class_views.followGet.as_view()),
-    path('api/follower', class_views.followList.as_view()),
+    path('api/follow', class_views.FollowObj.as_view(), name='follows'),
+    path('api/follow_list', class_views.FollowGet.as_view()),
+    path('api/follower', class_views.FollowList.as_view()),
+
+    path('api/record_list', class_views.RecordGet.as_view(), name='records'),
+    path('api/record', class_views.RecordObj.as_view())
 ]

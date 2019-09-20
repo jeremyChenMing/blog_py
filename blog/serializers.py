@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework import pagination
-from .models import User, Artical, Comment, FriendShip
+from .models import User, Artical, Comment, FriendShip, Game
 from rest_framework.response import Response
 
 
@@ -72,3 +72,12 @@ class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendShip
         fields = ['followed', 'follower', 'created_at', 'updated_at', 'id']
+
+
+# 游戏
+class GameSerializer(serializers.ModelSerializer):
+    user = TrackSerializer(read_only=True)
+
+    class Meta:
+        model = Game
+        fields = ['kilometer', 'user', 'created_at', 'updated_at', 'id']

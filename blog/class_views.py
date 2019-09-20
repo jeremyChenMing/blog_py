@@ -1,9 +1,8 @@
 from .models import *
 from rest_framework import views
-from .serializers import UserSerializer, ArticalSerializer, PageNumberPagination, CommentSerializer, FriendSerializer
+from .serializers import UserSerializer, ArticalSerializer, PageNumberPagination, CommentSerializer, FriendSerializer, GameSerializer
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
-#
 from rest_framework import permissions
 from rest_framework_simplejwt import authentication
 
@@ -13,9 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
     def validate(self, attrs):
-        print(attrs)
         try:
             data = super().validate(attrs)
             # 默认行为
@@ -46,22 +43,22 @@ class TestView(views.APIView):
     # authentication_classes = (authentication.JWTAuthentication,)
     # authentication_classes = ()
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         access = AccessToken(access_str)
         user = User.objects.get(id=access['user_id'])
-        print(user)
-        serliear = UserSerializer(user)
-        print(serliear.data['id'])
-        return Response(serliear.data, status=200)
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=200)
 
 
 # 创建用户
-class create_user(views.APIView):
+class CreateUser(views.APIView):
     # permission_classes = ()
     authentication_classes = ()
 
+    @staticmethod
     def post(self, request):
         has = User.objects.filter(username=request.data['username']).first()
         if has:
@@ -76,98 +73,106 @@ class create_user(views.APIView):
 
 
 # 用户详情、删除、更新
-class users(views.APIView):
+class Users(views.APIView):
     # permission_classes = ()
     # 默认启用jwt token
     # authentication_classes = ()
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            user = User.objects.get(id=access['user_id'])
-            serializer = UserSerializer(user)
-            return Response(serializer.data, status=200)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        user = User.objects.get(id=access['user_id'])
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=200)
 
+    @staticmethod
     def put(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            user = User.objects.get(id=access['user_id'])
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=200)
-            return Response(serializer.errors, status=400)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        user = User.objects.get(id=access['user_id'])
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
 
+
+    @staticmethod
     def delete(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            user = User.objects.get(id=access['user_id'])
-            user.delete()
-            return Response({}, status=200)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        user = User.objects.get(id=access['user_id'])
+        user.delete()
+        return Response({}, status=200)
 
 
 # 文章
-class articalObject(views.APIView):
-    # 创建文章
+class ArticalObject(views.APIView):
+
+    @staticmethod
     def post(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            request.data['user_id'] = access['user_id']
-            serializer = ArticalSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.create(request.data)
-                # Artical.objects.create(**request.data)
-                # serializer.save()
-                return Response({}, status=200)
-            return Response(serializer.errors, status=500)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        request.data['user_id'] = access['user_id']
+        serializer = ArticalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.create(request.data)
+            # Artical.objects.create(**request.data)
+            # serializer.save()
+            return Response({}, status=200)
+        return Response(serializer.errors, status=500)
 
+    @staticmethod
     def put(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            artical = Artical.objects.get(pk=request.data['artical_id'])
-            request.data['user_id'] = access['user_id']
-            serializer = ArticalSerializer(artical, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({}, status=200)
-            return Response(serializer.errors, status=500)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        artical = Artical.objects.get(pk=request.data['artical_id'])
+        request.data['user_id'] = access['user_id']
+        serializer = ArticalSerializer(artical, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({}, status=200)
+        return Response(serializer.errors, status=500)
 
+    @staticmethod
     def delete(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            artical = Artical.objects.get(pk=request.data['artical_id'])
-            artical.delete()
-            return Response({}, status=200)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        artical = Artical.objects.get(pk=request.data['artical_id'])
+        artical.delete()
+        return Response({}, status=200)
 
 
 # 文章列表
-class articalGet(views.APIView):
+class ArticalGet(views.APIView):
     authentication_classes = ()
 
+    @staticmethod
     def get(self, request):
         query = request.query_params
         if 'artical_id' in query:
@@ -221,27 +226,30 @@ class articalGet(views.APIView):
 
 
 # 获取某一用户下的所有文章
-class articalUser(views.APIView):
+class ArticalUser(views.APIView):
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            auther = User.objects.filter(pk=access['user_id']).first()
-            if auther:
-                articals = auther.artical_user.all()
-                serializer = ArticalSerializer(articals, many=True)
-                return Response({'count': len(serializer.data), 'items': serializer.data}, status=200)
-            return Response({'count': 0, 'items': []}, status=200)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+
+        has = User.objects.filter(pk=access['user_id']).first()
+        if has:
+            articals = has.artical_user.all()
+            serializer = ArticalSerializer(articals, many=True)
+            return Response({'count': len(serializer.data), 'items': serializer.data}, status=200)
+        return Response({'count': 0, 'items': []}, status=200)
 
 
 # 评论列表列表
-class commentGet(views.APIView):
+class CommentGet(views.APIView):
     authentication_classes = ()
 
+    @staticmethod
     def get(self, request):
         query = request.query_params
         artical_obj = Artical.objects.filter(pk=query['artical_id']).first()
@@ -263,10 +271,10 @@ class commentGet(views.APIView):
 
 
 # 创建评论
-class commentObj(views.APIView):
+class CommentObj(views.APIView):
 
+    @staticmethod
     def post(self, request):
-        print(request.data)
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.create(request.data)
@@ -274,31 +282,35 @@ class commentObj(views.APIView):
             return Response({}, status=200)
         return Response(serializer.errors, status=500)
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
         try:
             access = AccessToken(access_str)
-            auther = User.objects.filter(pk=access['user_id']).first()
-            if auther:
-                comments = auther.comment_user.all()
-                serializer = CommentSerializer(comments, many=True)
-                for n in serializer.data:
-                    if n['to_comment']:
-                        select_artical = Comment.objects.filter(pk=n['to_comment']).first()
-                        serializer_select = CommentSerializer(select_artical)
-                        n['to_comment_dict'] = {
-                            "nickname": serializer_select.data['belong_user']['nickname'],
-                            "id": serializer_select.data['belong_user']['id']
-                        }
-                return Response({"items": serializer.data}, status=200)
         except:
-            return Response({'code': 400, 'msg': 'token错误'}, status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        has = User.objects.filter(pk=access['user_id']).first()
+        if has:
+            comments = has.comment_user.all()
+            serializer = CommentSerializer(comments, many=True)
+            for n in serializer.data:
+                if n['to_comment']:
+                    select_artical = Comment.objects.filter(pk=n['to_comment']).first()
+                    serializer_select = CommentSerializer(select_artical)
+                    n['to_comment_dict'] = {
+                        "nickname": serializer_select.data['belong_user']['nickname'],
+                        "id": serializer_select.data['belong_user']['id']
+                    }
+            return Response({"items": serializer.data}, status=200)
+        return Response({"items": []}, status=200)
+
 
 
 # 点赞
-class niceObj(views.APIView):
+class NiceObj(views.APIView):
 
+    @staticmethod
     def post(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
@@ -325,6 +337,7 @@ class niceObj(views.APIView):
                 return Response({}, status=200)
             return Response(serializer.errors, status=500)
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
@@ -339,8 +352,9 @@ class niceObj(views.APIView):
 
 
 # 点赞
-class followObj(views.APIView):
+class FollowObj(views.APIView):
 
+    @staticmethod
     def post(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
@@ -363,9 +377,10 @@ class followObj(views.APIView):
 
 
 # 获取是否关注
-class followGet(views.APIView):
+class FollowGet(views.APIView):
     authentication_classes = ()
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
@@ -379,9 +394,10 @@ class followGet(views.APIView):
 
 
 # 获取登录人关注的人和粉丝
-class followList(views.APIView):
+class FollowList(views.APIView):
     authentication_classes = ()
 
+    @staticmethod
     def get(self, request):
         auth = request.META.get('HTTP_AUTHORIZATION', b'')
         access_str = auth[7:]
@@ -389,7 +405,7 @@ class followList(views.APIView):
         try:
             user_detail = User.objects.get(pk=access['user_id'])
         except:
-            return Response(status=404)
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
         followed_user = user_detail.followed.all()
         follower_user = user_detail.follower.all()
         serializer_followed = ArticalSerializer(followed_user, many=True)
@@ -398,4 +414,50 @@ class followList(views.APIView):
             'follower': serializer_follower.data,
             'followed': serializer_followed.data,
         }, status=200)
-        # return Response({'follow': False})
+
+
+# 获取游戏记录
+class RecordGet(views.APIView):
+    authentication_classes = ()
+
+    @staticmethod
+    def get(self, request):
+        records = Game.objects.all().order_by('-kilometer')
+        page_obj = PageNumberPagination()
+        page_data = page_obj.paginate_queryset(records, request)
+        ser_obj = GameSerializer(page_data, many=True)
+        return page_obj.get_paginated_response(ser_obj.data)
+
+
+# 创建记录
+class RecordObj(views.APIView):
+
+    @staticmethod
+    def post(self, request):
+        auth = request.META.get('HTTP_AUTHORIZATION', b'')
+        access_str = auth[7:]
+        try:
+            access = AccessToken(access_str)
+        except:
+            return Response({'code': 401, 'msg': 'token错误'}, status=401)
+        req = {
+            'user_id': access['user_id'],
+            'kilometer': request.data['kilometer']
+        }
+        has_user = Game.objects.filter(user_id=access['user_id']).first()
+        if has_user:
+            if has_user.kilometer < request.data["kilometer"]:
+                user_record = Game.objects.filter(user_id=access['user_id']).first()
+                serializer = GameSerializer(user_record, request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({}, status=200)
+                return Response(serializer.errors, status=500)
+            return Response({})
+        else:
+            serializer = GameSerializer(data=req)
+            if serializer.is_valid():
+                serializer.create(req)
+                return Response({}, status=200)
+            return Response(serializer.errors, status=500)
+
